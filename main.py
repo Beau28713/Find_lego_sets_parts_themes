@@ -1,11 +1,24 @@
-import csv
+"""Used to search the active Lego's database by:
+1. Updating your local dataframe.
+2. Geting information on diffrent lego colors.
+3. Finding out if any dataframe is missing data
+4. Geting information on all the sets and themes Lego uses. 
+5. Geting information on the many different parts lego has in stock
+
+"""
 import pandas as pd
-import matplotlib.pyplot as plt
 import requests
 import gzip
+import typer
+
+app = typer.Typer()
 
 
+@app.command()
 def update_csv_files():
+    """Downloads the updated CSV files in a zip folder formate
+    Saves the files, Then unzipes them and updates the CSV files
+    """
     url_colors = "https://cdn.rebrickable.com/media/downloads/colors.csv.gz"
     url_parts_cat = "https://cdn.rebrickable.com/media/downloads/part_categories.csv.gz"
     url_parts = "https://cdn.rebrickable.com/media/downloads/parts.csv.gz"
@@ -70,23 +83,61 @@ def update_csv_files():
         file_themes.write(themes.decode())
 
 
-def get_db(database: str):
-    return pd.read_csv(f"CSV_files\{database}.csv")
+def get_df(dataframe: str):
+    """Helper Function that creates the rquired dataframes
+
+    Args:
+        dataframe (str): _description_
+
+    Returns:
+        Dataframe: Returns he required dataframe
+    """
+    return pd.read_csv(f"CSV_files\{dataframe}.csv")
 
 
-def is_missing_data(data_base: str):
-    is_missing = get_db(data_base).isna().sum()
+@app.command()
+def is_missing_data(
+    dataframe: str = typer.Option(..., help="CSV file name to use", prompt=True)
+):
+    """Searches the desired dataframe for missing data "NA"
+
+    Args:
+        dataframe (str, Required): Name of the dataframe to search
+    """
+    is_missing = get_df(dataframe).isna().sum()
     print(is_missing)
 
 
-def lego_colors_data(color: str):
-    color_data = get_db("colors")
+@app.command()
+def lego_colors_data(
+    color: str = typer.Option(..., help="Color you would like to look up", prompt=True)
+):
+    """Get information on the different colors used by Lego
+
+    Args:
+        color (str, Required):Color you wish to search for.
+    """
+    color_data = get_df("colors")
     print(color_data[color_data["name"] == color.title()].set_index("name"))
 
 
-def get_sets_theme_data(theme_id: int = None, set_num: str = None):
-    set_db = get_db("sets")
-    theme_db = get_db("themes")
+@app.command()
+def get_sets_theme_data(
+    theme_id: int = typer.Option(
+        ..., help="Theme id number you want to search", prompt=True
+    ),
+    set_num: str = typer.Option(
+        None, help="Set number you wish to search"
+    ),
+):
+    """Get the informaton on themes and sets.
+
+    Args:
+        theme_id (int, Required): Theme ID number youu wish to search for.
+        set_num (str, Optional): Set number you wish to search for.
+    """
+    set_db = get_df("sets")
+    theme_db = get_df("themes")
 
     if theme_id:
 
@@ -111,11 +162,17 @@ def get_sets_theme_data(theme_id: int = None, set_num: str = None):
         print("No Theme ID or Set Number was suppled")
 
 
-def get_parts_data(part_num: str = None):
+@app.command()
+def get_parts_data(part_num: str = typer.Option(..., help="Part number you wish to search", prompt=True)):
+    """Search for Lego parts 
+
+    Args:
+        part_num (str, Required): Part number you wish to search for.
+    """
     try:
         if part_num:
-            parts_db = get_db("parts")
-            parts_cat_db = get_db("part_categories")
+            parts_db = get_df("parts")
+            parts_cat_db = get_df("part_categories")
 
             part = parts_db[parts_db["part_num"] == part_num].set_index("part_num")
 
@@ -135,13 +192,5 @@ def get_parts_data(part_num: str = None):
         print("Part not in database")
 
 
-def main():
-    # is_missing_data("themes")
-    # lego_colors_data("Black")
-    # get_sets_theme_data(theme_id=22)
-    get_parts_data("003383")
-    # update_csv_files()
-
-
 if __name__ == "__main__":
-    main()
+    app()
