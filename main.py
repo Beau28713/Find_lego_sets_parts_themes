@@ -133,7 +133,7 @@ def get_sets_theme_data(
     """Get the informaton on themes and sets.
 
     Args:
-        theme_id (int, Required): Theme ID number youu wish to search for.
+        theme_id (int, Required): Theme ID number you wish to search for.
         set_num (str, Optional): Set number you wish to search for.
     """
     set_db = get_df("sets")
